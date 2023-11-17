@@ -264,8 +264,57 @@ WITH ProductCustomerCount_CTE AS (
 	GROUP BY p.ProductID, p.ProductName
 )
 
-SELECT * 
+SELECT TOP 1
+ProductID, ProductName, CustomerCount
 FROM ProductCustomerCount_CTE
 ORDER BY CustomerCount DESC;
 
 
+
+-----List of Customers Who bought more than 10 products-------
+SELECT * 
+FROM Customer;
+
+SELECT * FROM SalesTransaction;
+
+SELECT c.CustomerID, c.FirstName, c.LastName
+FROM Customer c
+JOIN SalesTransaction st
+ON c.CustomerID = st.CustomerID
+GROUP BY c.CustomerID, c.FirstName, c.LastName
+HAVING COUNT(st.ProductID) >1;
+
+------creating a function--------
+/*Input Parameters:
+Customer (can pass multiple ids e.g.: 103,904)
+Start Date and End Date
+
+Requirement:
+Should return total bill amount of the customer in the given date range. */
+
+GO
+CREATE FUNCTION dbo.checkBillAmount(
+@CustomerId NVARCHAR(MAX),
+@startDate DATE,
+@endDate DATE
+) 
+RETURNS DECIMAL(10,2)
+AS
+BEGIN
+	DECLARE @totalAmount DECIMAL(10,2)
+		SELECT @totalAmount = SUM(TotalAmount)
+		FROM SalesTransaction 
+		WHERE CustomerID IN (SELECT VALUE FROM string_split(@CustomerId, ','))
+		AND TransactionDate BETWEEN @startDate AND @endDate;
+	
+	RETURN @totalAmount;
+END
+
+
+GO
+DECLARE @totalBill DECIMAL(10,2);
+SET @totalBill = dbo.checkBillAmount('1001,1000', '2023-10-10', '2023-11-11');
+
+SELECT @totalBill AS TotalBillAmount;
+
+SELECT * FROM SalesTransaction;
